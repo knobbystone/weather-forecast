@@ -48,13 +48,13 @@ class ForecastServiceTest {
                   "properties": {
                     "periods": [
                       {"number": 1, "name": "Today", "startTime": "2026-09-16T06:00:00Z",
-                       "isDaytime": true, "temperature": 77, "temperatureUnit": "F",
+                       "isDaytime": true, "temperature": 25.0, "temperatureUnit": "C",
                        "shortForecast": "Sunny", "detailedForecast": "Sunny."},
                       {"number": 2, "name": "Tonight", "startTime": "2026-09-16T18:00:00Z",
-                       "isDaytime": false, "temperature": 63, "temperatureUnit": "F",
+                       "isDaytime": false, "temperature": 17.2, "temperatureUnit": "C",
                        "shortForecast": "Mostly Clear", "detailedForecast": "Mostly clear."},
                       {"number": 3, "name": "Thursday", "startTime": "2026-09-17T06:00:00Z",
-                       "isDaytime": true, "temperature": 81, "temperatureUnit": "F",
+                       "isDaytime": true, "temperature": 27.2, "temperatureUnit": "C",
                        "shortForecast": "Chance Showers", "detailedForecast": "A chance of showers."}
                     ]
                   }
@@ -73,10 +73,10 @@ class ForecastServiceTest {
                   "properties": {
                     "periods": [
                       {"number": 1, "name": "Tonight", "startTime": "2026-09-16T18:00:00Z",
-                       "isDaytime": false, "temperature": 63, "temperatureUnit": "F",
+                       "isDaytime": false, "temperature": 17.2, "temperatureUnit": "C",
                        "shortForecast": "Mostly Clear", "detailedForecast": "Mostly clear."},
                       {"number": 2, "name": "Thursday", "startTime": "2026-09-17T06:00:00Z",
-                       "isDaytime": true, "temperature": 81, "temperatureUnit": "F",
+                       "isDaytime": true, "temperature": 27.2, "temperatureUnit": "C",
                        "shortForecast": "Chance Showers", "detailedForecast": "A chance of showers."}
                     ]
                   }
@@ -90,9 +90,9 @@ class ForecastServiceTest {
     }
 
     @Test
-    void roundsTheFahrenheitToCelsiusConversion() {
-        // 55°F = 12.777...°C, rounds to 12.8
-        enqueueForecast(singlePeriodBody("Sunny", "55"));
+    void roundsTheSiFullPrecisionCelsiusValue() {
+        // units=si can return the full conversion e.g. 12.777777777777779
+        enqueueForecast(singlePeriodBody("Sunny", "12.777777777777779"));
 
         StepVerifier.create(serviceAt("2026-09-16T12:00:00Z").todaysForecast("MLB", 33, 70))
                 .expectNext(new ForecastResult(List.of(new DailyForecast("Wednesday", 12.8, "Sunny"))))
@@ -127,8 +127,7 @@ class ForecastServiceTest {
                 .block();
 
         RecordedRequest request = server.takeRequest();
-        assertThat(request.getPath()).isEqualTo("/gridpoints/MLB/33,70/forecast");
-        assertThat(request.getPath()).doesNotContain("units=");
+        assertThat(request.getPath()).isEqualTo("/gridpoints/MLB/33,70/forecast?units=si");
         assertThat(request.getHeader(HttpHeaders.USER_AGENT)).contains("@");
         assertThat(request.getHeader(HttpHeaders.ACCEPT)).isEqualTo("application/geo+json");
     }
@@ -152,17 +151,17 @@ class ForecastServiceTest {
                 .setBody(body));
     }
 
-    private static String singlePeriodBody(String shortForecast, String fahrenheit) {
+    private static String singlePeriodBody(String shortForecast, String celsius) {
         return """
                 {
                   "properties": {
                     "periods": [
                       {"number": 1, "name": "Today", "startTime": "2026-09-16T06:00:00Z",
-                       "isDaytime": true, "temperature": %s, "temperatureUnit": "F",
+                       "isDaytime": true, "temperature": %s, "temperatureUnit": "C",
                        "shortForecast": "%s", "detailedForecast": "..."}
                     ]
                   }
                 }
-                """.formatted(fahrenheit, shortForecast);
+                """.formatted(celsius, shortForecast);
     }
 }

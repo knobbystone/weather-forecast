@@ -52,10 +52,9 @@ public class ForecastService {
     }
 
     private static DailyForecast toDailyForecast(Period period) {
-        double celsius = Math.round((period.temperature() - 32) * 5.0 / 9.0 * 10) / 10.0;
         return new DailyForecast(
                 period.startTime().getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH),
-                celsius,
+                Math.round(period.temperature() * 10) / 10.0,
                 period.shortForecast());
     }
 }

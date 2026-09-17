@@ -23,6 +23,7 @@ public class NwsClient {
     public Mono<ForecastResponse> forecast(String office, int gridX, int gridY) {
         return retrieve(webClient.get().uri(uriBuilder -> uriBuilder
                                 .path("/gridpoints/{office}/{gridX},{gridY}/forecast")
+                                .queryParam("units", "si")
                                 .build(office, gridX, gridY)),
                 ForecastResponse.class,
                 "forecast lookup for %s/%d,%d".formatted(office, gridX, gridY));
