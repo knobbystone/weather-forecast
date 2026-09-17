@@ -1,0 +1,22 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### IntelliJ ###
+.idea/
+*.iml
+*.iws
+
+### Eclipse / VS Code ###
+.classpath
+.project
+.settings/
+.vscode/
+
+### OS ###
+.DS_Store
+
+### Claude Code (local tooling) ###
+.claude/
+
+### Local notes (not for sharing) ###
+docs/reactor-notes.md

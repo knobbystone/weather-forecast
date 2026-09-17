@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: weather-forecast
+
+nws:
+  base-url: https://api.weather.gov
+  # weather.gov rejects requests without a descriptive User-Agent and asks for a
+  # contact address so they can reach out about traffic. Override per environment.
+  user-agent: "(weather-forecast demo, promo-prep@example.com)"
+  # Applied to the single gridpoint forecast call.
+  request-timeout: 5s
+
+logging:
+  level:
+    com.example.weather: DEBUG
