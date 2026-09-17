@@ -5,6 +5,7 @@ import com.example.weather.service.ForecastService;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
@@ -19,7 +20,9 @@ public class ForecastController {
     }
 
     @GetMapping("/today")
-    public Mono<ForecastResult> today() {
-        return forecastService.todaysForecast();
+    public Mono<ForecastResult> today(@RequestParam String office,
+                                      @RequestParam int gridX,
+                                      @RequestParam int gridY) {
+        return forecastService.todaysForecast(office, gridX, gridY);
     }
 }

@@ -20,10 +20,12 @@ public class NwsClient {
         this.properties = properties;
     }
 
-    public Mono<ForecastResponse> forecast() {
-        return retrieve(webClient.get().uri("/gridpoints/MLB/33,70/forecast"),
+    public Mono<ForecastResponse> forecast(String office, int gridX, int gridY) {
+        return retrieve(webClient.get().uri(uriBuilder -> uriBuilder
+                                .path("/gridpoints/{office}/{gridX},{gridY}/forecast")
+                                .build(office, gridX, gridY)),
                 ForecastResponse.class,
-                "forecast lookup");
+                "forecast lookup for %s/%d,%d".formatted(office, gridX, gridY));
     }
 
     private <T> Mono<T> retrieve(WebClient.RequestHeadersSpec<?> request, Class<T> responseType, String description) {

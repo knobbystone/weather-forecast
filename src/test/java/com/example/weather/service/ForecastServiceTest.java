@@ -61,7 +61,7 @@ class ForecastServiceTest {
                 }
                 """);
 
-        StepVerifier.create(serviceAt("2026-09-16T12:00:00Z").todaysForecast())
+        StepVerifier.create(serviceAt("2026-09-16T12:00:00Z").todaysForecast("MLB", 33, 70))
                 .expectNext(new ForecastResult(List.of(new DailyForecast("Wednesday", 25.0, "Sunny"))))
                 .verifyComplete();
     }
@@ -84,7 +84,7 @@ class ForecastServiceTest {
                 """);
 
         // 8pm UTC: daytime has passed, only the overnight period remains for today.
-        StepVerifier.create(serviceAt("2026-09-16T20:00:00Z").todaysForecast())
+        StepVerifier.create(serviceAt("2026-09-16T20:00:00Z").todaysForecast("MLB", 33, 70))
                 .expectNext(new ForecastResult(List.of(new DailyForecast("Wednesday", 17.2, "Mostly Clear"))))
                 .verifyComplete();
     }
@@ -94,7 +94,7 @@ class ForecastServiceTest {
         // 55°F = 12.777...°C, rounds to 12.8
         enqueueForecast(singlePeriodBody("Sunny", "55"));
 
-        StepVerifier.create(serviceAt("2026-09-16T12:00:00Z").todaysForecast())
+        StepVerifier.create(serviceAt("2026-09-16T12:00:00Z").todaysForecast("MLB", 33, 70))
                 .expectNext(new ForecastResult(List.of(new DailyForecast("Wednesday", 12.8, "Sunny"))))
                 .verifyComplete();
     }
@@ -104,7 +104,7 @@ class ForecastServiceTest {
         server.enqueue(new MockResponse().setResponseCode(404)
                 .setBody("{\"detail\":\"Unable to provide data for requested point\"}"));
 
-        StepVerifier.create(serviceAt("2026-09-16T12:00:00Z").todaysForecast())
+        StepVerifier.create(serviceAt("2026-09-16T12:00:00Z").todaysForecast("MLB", 33, 70))
                 .expectError(ForecastUnavailableException.class)
                 .verify();
     }
@@ -113,7 +113,7 @@ class ForecastServiceTest {
     void errorsWhenNoPeriodCoversToday() {
         enqueueForecast("{\"properties\": {\"periods\": []}}");
 
-        StepVerifier.create(serviceAt("2026-09-16T12:00:00Z").todaysForecast())
+        StepVerifier.create(serviceAt("2026-09-16T12:00:00Z").todaysForecast("MLB", 33, 70))
                 .expectError(ForecastUnavailableException.class)
                 .verify();
     }
@@ -122,12 +122,13 @@ class ForecastServiceTest {
     void asksWeatherGovWithCorrectPathAndHeaders() throws InterruptedException {
         enqueueForecast("{\"properties\": {\"periods\": []}}");
 
-        serviceAt("2026-09-16T12:00:00Z").todaysForecast()
+        serviceAt("2026-09-16T12:00:00Z").todaysForecast("MLB", 33, 70)
                 .onErrorComplete()
                 .block();
 
         RecordedRequest request = server.takeRequest();
         assertThat(request.getPath()).isEqualTo("/gridpoints/MLB/33,70/forecast");
+        assertThat(request.getPath()).doesNotContain("units=");
         assertThat(request.getHeader(HttpHeaders.USER_AGENT)).contains("@");
         assertThat(request.getHeader(HttpHeaders.ACCEPT)).isEqualTo("application/geo+json");
     }

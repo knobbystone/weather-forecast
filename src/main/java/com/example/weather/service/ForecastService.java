@@ -35,8 +35,8 @@ public class ForecastService {
      * collapses today's periods to one, keeping the daytime period if found, otherwise
      * yielding the overnight fallback.
      */
-    public Mono<ForecastResult> todaysForecast() {
-        return nwsClient.forecast()
+    public Mono<ForecastResult> todaysForecast(String office, int gridX, int gridY) {
+        return nwsClient.forecast(office, gridX, gridY)
                 .flatMapMany(response -> Flux.fromIterable(getPeriods(response)))
                 .filter(period -> period.startTime().toLocalDate().equals(LocalDate.now(clock)))
                 .reduce((current, next) -> current.isDaytime() ? current : next)
