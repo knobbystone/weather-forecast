@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 
 import com.example.weather.client.NwsClient;
+import com.example.weather.client.nws.ForecastResponse;
 import com.example.weather.client.nws.ForecastResponse.Period;
 import com.example.weather.domain.DailyForecast;
 import com.example.weather.domain.ForecastResult;
@@ -36,15 +37,18 @@ public class ForecastService {
      */
     public Mono<ForecastResult> todaysForecast() {
         return nwsClient.forecast()
-                .flatMapMany(response -> Flux.fromIterable(
-                        response.properties() != null && response.properties().periods() != null
-                        ? response.properties().periods()
-                        : List.<Period>of()))
+                .flatMapMany(response -> Flux.fromIterable(getPeriods(response)))
                 .filter(period -> period.startTime().toLocalDate().equals(LocalDate.now(clock)))
                 .reduce((current, next) -> current.isDaytime() ? current : next)
                 .map(ForecastService::toDailyForecast)
                 .map(forecast -> new ForecastResult(List.of(forecast)))
                 .switchIfEmpty(Mono.error(() -> new ForecastUnavailableException("no forecast available for today")));
+    }
+
+    private static List<Period> getPeriods(ForecastResponse response) {
+        return response.properties() != null && response.properties().periods() != null
+                ? response.properties().periods()
+                : List.of();
     }
 
     private static DailyForecast toDailyForecast(Period period) {
