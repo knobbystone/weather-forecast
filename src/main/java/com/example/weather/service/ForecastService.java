@@ -20,6 +20,8 @@ import reactor.core.publisher.Mono;
 @Service
 public class ForecastService {
 
+    private static final int MAX_CONCURRENT_LOOKUPS = 4;
+
     private final NwsClient nwsClient;
     private final Clock clock;
 
@@ -43,6 +45,25 @@ public class ForecastService {
                 .map(ForecastService::toDailyForecast)
                 .map(forecast -> new ForecastResult(List.of(forecast)))
                 .switchIfEmpty(Mono.error(() -> new ForecastUnavailableException("no forecast available for today")));
+    }
+
+    /** Same upstream call, but cardinality is 0..N — one item per daytime period. */
+    public Flux<DailyForecast> weekAhead() {
+        return nwsClient.forecast()
+                .flatMapMany(response -> Flux.fromIterable(getPeriods(response)))
+                .filter(Period::isDaytime)
+                .map(ForecastService::toDailyForecast);
+    }
+
+    /** Fan-out: N gridpoints in parallel, results interleaved as they arrive. */
+    public Flux<DailyForecast> todaysForecasts(List<String> gridpoints) {
+        return Flux.fromIterable(gridpoints)
+                .flatMap(gp -> nwsClient.forecast(gp)
+                        .flatMapMany(response -> Flux.fromIterable(getPeriods(response)))
+                        .filter(period -> period.startTime().toLocalDate().equals(LocalDate.now(clock)))
+                        .reduce((current, next) -> current.isDaytime() ? current : next)
+                        .map(ForecastService::toDailyForecast),
+                        MAX_CONCURRENT_LOOKUPS);
     }
 
     private static List<Period> getPeriods(ForecastResponse response) {

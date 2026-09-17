@@ -21,9 +21,13 @@ public class NwsClient {
     }
 
     public Mono<ForecastResponse> forecast() {
-        return retrieve(webClient.get().uri("/gridpoints/MLB/33,70/forecast"),
+        return forecast("MLB/33,70");
+    }
+
+    public Mono<ForecastResponse> forecast(String gridpoint) {
+        return retrieve(webClient.get().uri("/gridpoints/" + gridpoint + "/forecast"),
                 ForecastResponse.class,
-                "forecast lookup");
+                "forecast lookup for " + gridpoint);
     }
 
     private <T> Mono<T> retrieve(WebClient.RequestHeadersSpec<?> request, Class<T> responseType, String description) {
